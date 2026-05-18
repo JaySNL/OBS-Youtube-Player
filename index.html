@@ -95,7 +95,7 @@
 
           if (songID && listID) {
             debug("Given first video/song, playlist comes after");
-            player.cueVideoById({ videoId: songID });
+            player.loadVideoById({ videoId: songID, startSeconds: Number(startSeconds) });
 
             player.addEventListener("onStateChange", ({ data }) => {
               if (data === 0) {
@@ -115,7 +115,7 @@
 
           if (songID && !listID) {
             debug("Song only detected");
-            player.cueVideoById({ videoId: songID });
+            player.loadVideoById({ videoId: songID, startSeconds: Number(startSeconds) });
           }
         }
 
