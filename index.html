@@ -1,5 +1,8 @@
 <html>
   <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>OBS YouTube Player</title>
     <style>
       * {
         margin: 0;
@@ -9,6 +12,159 @@
       body {
         background: none;
       }
+      body.configurator {
+        background: #1a1a2e;
+        color: #e0e0e0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        padding: 2rem;
+      }
+      .config-wrap {
+        max-width: 640px;
+        width: 100%;
+      }
+      .config-wrap h1 {
+        font-size: 1.5rem;
+        margin-bottom: 0.25rem;
+        color: #fff;
+      }
+      .config-wrap p.subtitle {
+        color: #888;
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+      }
+      .field {
+        margin-bottom: 1rem;
+      }
+      .field label {
+        display: block;
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-bottom: 0.3rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .field input[type="text"],
+      .field input[type="number"],
+      .field select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        background: #16213e;
+        border: 1px solid #333;
+        border-radius: 6px;
+        color: #e0e0e0;
+        font-size: 0.95rem;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+      .field input:focus,
+      .field select:focus {
+        border-color: #e94560;
+      }
+      .field input::placeholder {
+        color: #555;
+      }
+      .field .hint {
+        font-size: 0.75rem;
+        color: #666;
+        margin-top: 0.2rem;
+      }
+      .row {
+        display: flex;
+        gap: 1rem;
+      }
+      .row .field {
+        flex: 1;
+      }
+      .toggles {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+      }
+      .toggle {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 0.75rem;
+        background: #16213e;
+        border: 1px solid #333;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: border-color 0.2s;
+        user-select: none;
+      }
+      .toggle:hover {
+        border-color: #555;
+      }
+      .toggle input {
+        accent-color: #e94560;
+      }
+      .toggle span {
+        font-size: 0.85rem;
+      }
+      .output-section {
+        margin-top: 1.5rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #333;
+      }
+      .output-section label {
+        display: block;
+        font-size: 0.8rem;
+        color: #aaa;
+        margin-bottom: 0.3rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .url-box {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .url-box input {
+        flex: 1;
+        padding: 0.6rem 0.75rem;
+        background: #0f3460;
+        border: 1px solid #e94560;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 0.85rem;
+        font-family: monospace;
+        outline: none;
+      }
+      .url-box button,
+      .btn-preview {
+        padding: 0.6rem 1.2rem;
+        background: #e94560;
+        border: none;
+        border-radius: 6px;
+        color: #fff;
+        font-size: 0.85rem;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.2s;
+      }
+      .url-box button:hover,
+      .btn-preview:hover {
+        background: #c73652;
+      }
+      .copied {
+        background: #2ecc71 !important;
+      }
+      .preview-row {
+        margin-top: 0.75rem;
+        display: flex;
+        gap: 0.5rem;
+      }
+      .btn-preview {
+        background: #16213e;
+        border: 1px solid #333;
+      }
+      .btn-preview:hover {
+        background: #1a2744;
+        border-color: #555;
+      }
     </style>
   </head>
   <body>
@@ -17,7 +173,209 @@
       <div id="player"></div>
     </div>
 
-    <script async src="https://www.youtube.com/iframe_api"></script>
+    <div id="configurator" style="display:none">
+      <div class="config-wrap">
+        <h1>OBS YouTube Player</h1>
+        <p class="subtitle">Configure your player, copy the URL, paste into OBS Browser Source</p>
+
+        <div class="field">
+          <label>YouTube Video URL or ID</label>
+          <input type="text" id="cfg-video" placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ or just the ID">
+          <div class="hint">Single video to play</div>
+        </div>
+
+        <div class="field">
+          <label>YouTube Playlist URL or ID</label>
+          <input type="text" id="cfg-playlist" placeholder="https://www.youtube.com/playlist?list=PLxxxxxx or just the ID">
+          <div class="hint">Playlist ID (starts with PL). Can combine with a video above to play it first.</div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Volume (0-100)</label>
+            <input type="number" id="cfg-volume" value="45" min="0" max="100">
+          </div>
+          <div class="field">
+            <label>Speed</label>
+            <select id="cfg-speed">
+              <option value="0.25">0.25x</option>
+              <option value="0.5">0.5x</option>
+              <option value="0.75">0.75x</option>
+              <option value="1" selected>1x (Normal)</option>
+              <option value="1.25">1.25x</option>
+              <option value="1.5">1.5x</option>
+              <option value="2">2x</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Quality</label>
+            <select id="cfg-quality">
+              <option value="default" selected>Auto</option>
+              <option value="small">240p</option>
+              <option value="medium">360p</option>
+              <option value="large">480p</option>
+              <option value="hd720">720p</option>
+              <option value="hd1080">1080p</option>
+              <option value="highres">4K+</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Width (px)</label>
+            <input type="number" id="cfg-width" value="534" min="1">
+          </div>
+          <div class="field">
+            <label>Height (px)</label>
+            <input type="number" id="cfg-height" value="300" min="1">
+          </div>
+          <div class="field">
+            <label>Start at (seconds)</label>
+            <input type="number" id="cfg-start" value="0" min="0">
+          </div>
+          <div class="field">
+            <label>Playlist index</label>
+            <input type="number" id="cfg-index" value="0" min="0">
+            <div class="hint">Which track to start on (0-based)</div>
+          </div>
+        </div>
+
+        <label style="display:block;font-size:0.8rem;color:#aaa;margin-bottom:0.5rem;text-transform:uppercase;letter-spacing:0.05em">Options</label>
+        <div class="toggles">
+          <label class="toggle"><input type="checkbox" id="cfg-loop" checked><span>Loop</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-random"><span>Shuffle</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-fade"><span>Fade in/out</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-title"><span>Show title</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-controls"><span>Show controls</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-hide"><span>Hide video</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-hideWhenStopped"><span>Hide when stopped</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-forcequality"><span>Force quality</span></label>
+          <label class="toggle"><input type="checkbox" id="cfg-debug"><span>Debug mode</span></label>
+        </div>
+
+        <div class="output-section">
+          <label>Generated URL</label>
+          <div class="url-box">
+            <input type="text" id="cfg-output" readonly>
+            <button id="cfg-copy">Copy</button>
+          </div>
+          <div class="preview-row">
+            <button class="btn-preview" id="cfg-preview">Preview in new tab</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const url = new URL(window.location.href);
+      let songID = url.searchParams.get("watch?v");
+      let listID = url.searchParams.get("list");
+      const isPlayer = songID || listID;
+
+      if (!isPlayer) {
+        document.body.classList.add("configurator");
+        document.getElementById("container").style.display = "none";
+        document.getElementById("configurator").style.display = "flex";
+
+        function extractVideoId(input) {
+          if (!input) return "";
+          const m = input.match(/(?:watch\?v=|youtu\.be\/|embed\/|\/v\/)([A-Za-z0-9_-]{11})/);
+          if (m) return m[1];
+          if (/^[A-Za-z0-9_-]{11}$/.test(input.trim())) return input.trim();
+          return "";
+        }
+
+        function extractPlaylistId(input) {
+          if (!input) return "";
+          const m = input.match(/[?&]list=([A-Za-z0-9_-]+)/);
+          if (m) return m[1];
+          if (/^PL[A-Za-z0-9_-]+$/.test(input.trim())) return input.trim();
+          return input.trim();
+        }
+
+        function generateUrl() {
+          const base = window.location.origin + window.location.pathname;
+          const params = new URLSearchParams();
+
+          const vid = extractVideoId(document.getElementById("cfg-video").value);
+          const plist = extractPlaylistId(document.getElementById("cfg-playlist").value);
+
+          if (vid) params.set("watch?v", vid);
+          if (plist) params.set("list", plist);
+
+          const vol = document.getElementById("cfg-volume").value;
+          if (vol && vol !== "45") params.set("volume", vol);
+
+          const speed = document.getElementById("cfg-speed").value;
+          if (speed !== "1") params.set("speed", speed);
+
+          const quality = document.getElementById("cfg-quality").value;
+          if (quality !== "default") params.set("quality", quality);
+
+          const forcequality = document.getElementById("cfg-forcequality").checked;
+          if (forcequality) params.set("forcequality", "true");
+
+          const w = document.getElementById("cfg-width").value;
+          if (w && w !== "534") params.set("w", w);
+
+          const h = document.getElementById("cfg-height").value;
+          if (h && h !== "300") params.set("h", h);
+
+          const t = document.getElementById("cfg-start").value;
+          if (t && t !== "0") params.set("t", t);
+
+          const idx = document.getElementById("cfg-index").value;
+          if (idx && idx !== "0") params.set("index", idx);
+
+          const loop = document.getElementById("cfg-loop").checked;
+          if (!loop) params.set("loop", "false");
+
+          if (document.getElementById("cfg-random").checked) params.set("random", "true");
+          if (document.getElementById("cfg-fade").checked) params.set("fade", "true");
+          if (document.getElementById("cfg-title").checked) params.set("title", "true");
+          if (document.getElementById("cfg-controls").checked) params.set("controls", "true");
+          if (document.getElementById("cfg-hide").checked) params.set("hide", "true");
+          if (document.getElementById("cfg-hideWhenStopped").checked) params.set("hideWhenStopped", "true");
+          if (document.getElementById("cfg-debug").checked) params.set("debug", "true");
+
+          const paramStr = params.toString().replace(/%3F/g, "?");
+          const result = (vid || plist) ? base + "?" + paramStr : "";
+          document.getElementById("cfg-output").value = result;
+        }
+
+        document.querySelectorAll("#configurator input, #configurator select").forEach(el => {
+          el.addEventListener("input", generateUrl);
+          el.addEventListener("change", generateUrl);
+        });
+
+        document.getElementById("cfg-copy").addEventListener("click", function() {
+          const output = document.getElementById("cfg-output");
+          if (!output.value) return;
+          navigator.clipboard.writeText(output.value);
+          this.textContent = "Copied!";
+          this.classList.add("copied");
+          setTimeout(() => { this.textContent = "Copy"; this.classList.remove("copied"); }, 1500);
+        });
+
+        document.getElementById("cfg-preview").addEventListener("click", function() {
+          const output = document.getElementById("cfg-output").value;
+          if (output) window.open(output, "_blank");
+        });
+
+      } else {
+        document.getElementById("configurator").style.display = "none";
+      }
+    </script>
+
+    <script>
+      if (isPlayer) {
+        const s = document.createElement("script");
+        s.src = "https://www.youtube.com/iframe_api";
+        s.async = true;
+        document.head.appendChild(s);
+      }
+    </script>
 
     <script>
       function info(txt) {
@@ -28,10 +386,6 @@
         debugMode ? console.log(msg) : null;
       }
 
-      const url = new URL(window.location.href);
-
-      let songID = url.searchParams.get("watch?v");
-      let listID = url.searchParams.get("list");
       let title = url.searchParams.get("title") == "true" ? true : false;
       let volume = url.searchParams.get("volume") || 45;
       let width = url.searchParams.get("w") || 534;
@@ -49,10 +403,10 @@
       let hideWhenStopped = url.searchParams.get('hideWhenStopped') == "true" ? true : false;
       let controls = url.searchParams.get('controls') == "true" ? true : false;
 
-      // Hide/Show the title area
-      hide ? (document.querySelector("#player").style.display = "none") : null;
-
-      debug(`insert : videoID = ${songID} | listID = ${listID}`);
+      if (isPlayer) {
+        hide ? (document.querySelector("#player").style.display = "none") : null;
+        debug(`insert : videoID = ${songID} | listID = ${listID}`);
+      }
 
       function onYouTubeIframeAPIReady() {
         const player = new YT.Player("player", {
@@ -60,18 +414,18 @@
           height: height,
 
           playerVars: {
-            autoplay: 1, // Auto-play the video on load
-            controls: controls === true ? 1 : 0, // Toggle pause/play buttons in player
-            showinfo: 0, // Hide the video title
-            modestbranding: 1, // Hide the Youtube Logo
+            autoplay: 1,
+            controls: controls === true ? 1 : 0,
+            showinfo: 0,
+            modestbranding: 1,
             playinline: 1,
-            disablekb: 1, // Disable keyboard shortcuts
-            fs: 0, // Hide the full screen button
-            cc_load_policy: 0, // Hide closed captions
-            iv_load_policy: 3, // Hide the Video Annotations
-            autohide: 1, // Hide video controls when playing
+            disablekb: 1,
+            fs: 0,
+            cc_load_policy: 0,
+            iv_load_policy: 3,
+            autohide: 1,
             enablejsapi: 1,
-            rel: 0, // Hide videos recommandations when stopped
+            rel: 0,
           },
           events: {
             onReady,
@@ -83,14 +437,9 @@
         });
 
         function onReady(event) {
-          // Enforcing defaults params
-          // Apply choose volume
           player.setVolume(volume);
-          // Apply choosen video quality
           player.setPlaybackQuality(quality);
-          // Apply choosen video speed
           player.setPlaybackRate(Number(speed));
-          // Toggle looping
           player.setLoop(loop);
 
           if (songID && listID) {
@@ -99,7 +448,6 @@
 
             player.addEventListener("onStateChange", ({ data }) => {
               if (data === 0) {
-                // Remark (HoPollo) : First video seems be played twice event without loop mode, quick fix is stopping and cue playlist to avoid that
                 player.stopVideo();
                 player.cuePlaylist({ list: listID });
               }
@@ -108,8 +456,6 @@
 
           if (!songID && listID) {
             debug("Playlist only detected");
-            // Remark: (HoPollo) : YT playlists seems to be flushed by default, event starting with de same index, the video is different
-
             player.loadPlaylist({ list: listID, index });
           }
 
@@ -121,11 +467,10 @@
 
         function onStateChange(event) {
           switch (event.data) {
-            case -1: // Not started
+            case -1:
               shuffleSongs();
-              //debug("Not started");
               break;
-            case 0: // Stopped
+            case 0:
               debug("Stopped");
               if (listID && loop) {
                 player.cuePlaylist({ list: listID, index })
@@ -135,21 +480,21 @@
               }
               hideWhenStopped && (document.querySelector("#container").style.display = "none");
               break;
-            case 1: // Playing
+            case 1:
               document.querySelector("#info").innerHTML = "";
               debug("Playing... ");
               hideWhenStopped && (document.querySelector("#container").style.display = "block");
               onAir();
               break;
-            case 2: // Pause
+            case 2:
               debug("Paused...");
               onAir();
               break;
-            case 3: // Loading
+            case 3:
               debug("Loading...");
               startSeconds > 0 && player.seekTo(startSeconds);
               break;
-            case 5: // In queue
+            case 5:
               debug("Queued...");
               onAir();
               break;
@@ -159,7 +504,6 @@
           }
         }
 
-        // Toggle Shuffle();
         let randomized = false;
         function shuffleSongs() {
           if(randomized){
@@ -170,7 +514,7 @@
           }
 
           if (index !== 0) {
-            player.playVideo(index + 1); // 0 based indexes
+            player.playVideo(index + 1);
           }
 
           if (!index && random) {
@@ -178,17 +522,6 @@
             player.nextVideo();
           }
           randomized=true;
-          /*
-          if (!randomized) {
-            player.stopVideo();
-            if (random) {
-              player.setShuffle(true);
-            }
-            player.nextVideo();
-
-            randomized = true;
-          }
-          */
         }
 
         function onPlaybackQualityChange() {
