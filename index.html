@@ -130,6 +130,9 @@
               if (listID && loop) {
                 player.cuePlaylist({ list: listID, index })
               }
+              if (songID && !listID && loop) {
+                player.loadVideoById({ videoId: songID, startSeconds: Number(startSeconds) });
+              }
               hideWhenStopped && (document.querySelector("#container").style.display = "none");
               break;
             case 1: // Playing
